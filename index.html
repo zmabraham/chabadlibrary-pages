@@ -354,8 +354,32 @@ const CATEGORIES = [
     }
 ];
 
+// URL routing: hash = #/books/ID
+function getHashId() {
+    const h = window.location.hash;
+    const m = h.match(/^#\/books\/(\d+)$/);
+    return m ? m[1] : null;
+}
+
+function setHashId(id) {
+    if (id) {
+        window.history.pushState(null, '', `#/books/${id}`);
+    } else {
+        window.history.pushState(null, '', '#');
+    }
+}
+
+window.addEventListener('popstate', () => {
+    const id = getHashId();
+    if (id) {
+        loadPage(id, '', false);
+    } else {
+        showWelcome(false);
+    }
+});
+
 // Navigation history stack
-let history = [];
+let navHistory = [];
 let currentId = null;
 
 function buildNav() {
@@ -389,9 +413,10 @@ function toggleCat(el) {
     el.parentElement.classList.toggle('open');
 }
 
-function showWelcome() {
-    history = [];
+function showWelcome(updateUrl = true) {
+    navHistory = [];
     currentId = null;
+    if (updateUrl) setHashId(null);
     document.getElementById('breadcrumb').innerHTML = '<a onclick="showWelcome()">ראשי</a>';
     document.getElementById('pageContent').innerHTML = `
         <div class="welcome">
@@ -407,8 +432,9 @@ function showWelcome() {
     document.querySelectorAll('.book-item').forEach(b => b.classList.remove('active'));
 }
 
-async function loadPage(id, titleHint) {
+async function loadPage(id, titleHint, updateUrl = true) {
     currentId = id;
+    if (updateUrl) setHashId(id);
     document.getElementById('pageContent').innerHTML = '<div class="loading">טוען... Loading...</div>';
 
     try {
@@ -482,8 +508,7 @@ function renderPage(id, rawText, titleHint) {
     let html = `<div class="page-content">`;
 
     // Back button if navigated deep
-    if (history.length > 0) {
-        const prev = history[history.length - 1];
+    if (navHistory.length > 0) {
         html += `<button class="back-btn" onclick="goBack()">← חזרה</button>`;
     }
 
@@ -522,13 +547,13 @@ function renderPage(id, rawText, titleHint) {
 }
 
 function navigate(id, title) {
-    if (currentId) history.push(currentId);
+    if (currentId) navHistory.push(currentId);
     loadPage(id, title);
 }
 
 function goBack() {
-    if (history.length === 0) { showWelcome(); return; }
-    const prev = history.pop();
+    if (navHistory.length === 0) { showWelcome(); return; }
+    const prev = navHistory.pop();
     currentId = prev;
     loadPage(prev, '');
 }
@@ -549,6 +574,12 @@ function onSearch(query) {
 }
 
 buildNav();
+
+// Load from URL on startup
+const initialId = getHashId();
+if (initialId) {
+    loadPage(initialId, '', false);
+}
 </script>
 </body>
 </html>
