@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ספריית חב"ד ליובאוויטש</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'David', 'Times New Roman', serif;
+            background: #F7F3EC;
+            color: #1a1a1a;
+            line-height: 1.7;
+            direction: rtl;
+        }
+        .layout {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            min-height: 100vh;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        /* Sidebar */
+        .sidebar {
+            background: #2C1810;
+            color: #F0E8D8;
+            overflow-y: auto;
+            max-height: 100vh;
+            position: sticky;
+            top: 0;
+        }
+        .sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #4a2e20;
+            text-align: center;
+        }
+        .sidebar-header h1 {
+            font-size: 1.2rem;
+            color: #D4AF37;
+            margin-bottom: 0.3rem;
+        }
+        .sidebar-header .sub {
+            font-size: 0.75rem;
+            color: #a09080;
+            direction: ltr;
+        }
+        .sidebar-stats {
+            font-size: 0.7rem;
+            color: #8a7a6a;
+            margin-top: 0.3rem;
+        }
+        .search-box {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #3a2018;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 0.4rem 0.6rem;
+            background: #3a2018;
+            border: 1px solid #5a3828;
+            color: #F0E8D8;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            direction: rtl;
+        }
+        .search-box input::placeholder { color: #7a6a5a; }
+        .nav-tree { padding: 0.5rem 0; }
+        .cat-item {
+            border-bottom: 1px solid #3a2018;
+        }
+        .cat-header {
+            padding: 0.6rem 1rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.15s;
+        }
+        .cat-header:hover { background: #3a2018; }
+        .cat-header .cat-title { font-size: 0.9rem; color: #D4AF37; }
+        .cat-header .cat-en { font-size: 0.7rem; color: #8a7a6a; direction: ltr; }
+        .cat-header .arrow { font-size: 0.7rem; color: #6a5a4a; transition: transform 0.2s; }
+        .cat-item.open .arrow { transform: rotate(90deg); }
+        .cat-books { display: none; background: #231208; }
+        .cat-item.open .cat-books { display: block; }
+        .book-item {
+            padding: 0.5rem 1.5rem;
+            cursor: pointer;
+            font-size: 0.85rem;
+            color: #C8B89A;
+            border-bottom: 1px solid #2a1810;
+            transition: background 0.15s;
+        }
+        .book-item:hover { background: #3a2018; color: #D4AF37; }
+        .book-item.active { background: #4a3020; color: #FFD700; }
+        .book-item .book-en { font-size: 0.7rem; color: #7a6a5a; direction: ltr; }
+        /* Main content */
+        .main {
+            padding: 0;
+            overflow-y: auto;
+            max-height: 100vh;
+        }
+        .breadcrumb-bar {
+            background: #E8E0D0;
+            padding: 0.6rem 1.5rem;
+            font-size: 0.8rem;
+            color: #6a5a4a;
+            border-bottom: 1px solid #d0c8b8;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .breadcrumb-bar a {
+            color: #8B4513;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .breadcrumb-bar a:hover { text-decoration: underline; }
+        .page-content {
+            padding: 2rem 2.5rem;
+            max-width: 860px;
+            margin: 0 auto;
+        }
+        .page-title {
+            font-size: 1.6rem;
+            color: #5C2E00;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #D4AF37;
+        }
+        .children-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+        .child-card {
+            background: white;
+            border: 1px solid #d8cfc0;
+            border-radius: 6px;
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            transition: all 0.15s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+        .child-card:hover {
+            border-color: #8B4513;
+            background: #FFF8F0;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+        }
+        .child-card .child-title { font-size: 1rem; color: #2C1810; }
+        .child-card .child-id { font-size: 0.65rem; color: #aaa; direction: ltr; margin-top: 0.2rem; }
+        .text-body {
+            font-size: 1.05rem;
+            line-height: 1.9;
+            color: #2C1810;
+            margin-top: 1.5rem;
+            white-space: pre-wrap;
+        }
+        .haoros-section {
+            margin-top: 2rem;
+            padding: 1rem 1.5rem;
+            background: #F0EBE0;
+            border-right: 4px solid #D4AF37;
+            border-radius: 4px;
+        }
+        .haoros-section h3 { color: #8B4513; margin-bottom: 0.5rem; }
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: #8a7a6a;
+            font-size: 1.1rem;
+        }
+        .welcome {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #8a7a6a;
+        }
+        .welcome h2 { font-size: 2rem; color: #5C2E00; margin-bottom: 1rem; }
+        .welcome p { font-size: 1rem; max-width: 500px; margin: 0 auto 0.5rem; }
+        .welcome .stats-big {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            margin-top: 2rem;
+        }
+        .stat-block { text-align: center; }
+        .stat-block .num { font-size: 2rem; color: #D4AF37; font-weight: bold; }
+        .stat-block .lbl { font-size: 0.8rem; color: #aaa; }
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 1rem;
+            padding: 0.3rem 0.8rem;
+            background: #8B4513;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            border: none;
+        }
+        .back-btn:hover { background: #6B3410; }
+        @media (max-width: 768px) {
+            .layout { grid-template-columns: 1fr; }
+            .sidebar { max-height: 50vh; position: relative; }
+            .main { max-height: none; }
+            .page-content { padding: 1rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="layout">
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h1>📚 ספריית חב"ד ליובאוויטש</h1>
+            <div class="sub">Chabad Library — chabadlibrary.org</div>
+            <div class="sidebar-stats" id="stats">66,816 pages</div>
+        </div>
+        <div class="search-box">
+            <input type="text" id="search" placeholder="חיפוש..." oninput="onSearch(this.value)">
+        </div>
+        <div class="nav-tree" id="navTree"></div>
+    </aside>
+
+    <main class="main">
+        <div class="breadcrumb-bar" id="breadcrumb">
+            <a onclick="showWelcome()">ראשי</a>
+        </div>
+        <div class="page-content" id="pageContent">
+            <div class="welcome">
+                <h2>ספריית חב"ד ליובאוויטש</h2>
+                <p>בחר ספר מהתפריט משמאל כדי לצפות בתוכן</p>
+                <p style="font-size:0.85rem; direction:ltr; color:#aaa;">Select a book from the sidebar to view content</p>
+                <div class="stats-big">
+                    <div class="stat-block">
+                        <div class="num">66,816</div>
+                        <div class="lbl">pages scraped</div>
+                    </div>
+                    <div class="stat-block">
+                        <div class="num">353</div>
+                        <div class="lbl">books & volumes</div>
+                    </div>
+                    <div class="stat-block">
+                        <div class="num">9</div>
+                        <div class="lbl">Rebbes</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+const ROOT_PAGES = 'pages/';
+
+const CATEGORIES = [
+    {
+        id: '100000000', title: 'ספרי הבעל שם טוב', en: 'Baal Shem Tov',
+        books: [{ id: '300000000', title: 'כתר שם טוב', en: 'Keter Shem Tov' }]
+    },
+    {
+        id: '200000000', title: 'ספרי הרב המגיד ממעזריטש', en: 'Maggid of Mezritch',
+        books: [{ id: '400000000', title: 'אור תורה', en: 'Or HaTorah' }]
+    },
+    {
+        id: '500000000', title: 'ספרי כ"ק אדמו"ר הזקן', en: 'Alter Rebbe',
+        books: [
+            { id: '3401310000', title: 'תניא', en: 'Tanya' },
+            { id: '3901370000', title: 'תורה אור', en: 'Torah Or' },
+            { id: '4001380000', title: 'ליקוטי תורה', en: 'Likutei Torah' },
+            { id: '2100000000', title: 'מאמרי אדה"ז', en: 'Maamarim Alter Rebbe' },
+            { id: '3101000000', title: 'שולחן ערוך הרב', en: 'Shulchan Aruch HaRav' },
+            { id: '3201290000', title: 'שו"ת', en: 'Responsa' },
+            { id: '5601280000', title: 'פסקי הסידור', en: 'Piskei HaSiddur' },
+            { id: '1120000000', title: 'שוע"ר עם ביאור דברי שלום', en: 'Shulchan Aruch with Commentary' },
+        ]
+    },
+    {
+        id: '600000000', title: 'ספרי כ"ק אדמו"ר האמצעי', en: 'Mitteler Rebbe',
+        books: [
+            { id: '1700400000', title: 'אמרי בינה', en: 'Emrei Binah' },
+            { id: '2800530000', title: 'נר מצוה ותורה אור', en: 'Ner Mitzvah VeTorah Or' },
+            { id: '2400650000', title: 'פירוש המילות', en: 'Pirush HaMilot' },
+            { id: '2201340000', title: 'שערי אורה', en: "Sha'arei Orah" },
+            { id: '2500660000', title: 'שערי תשובה', en: "Sha'arei Teshuvah" },
+            { id: '2300000000', title: 'תורת חיים', en: 'Torat Chaim' },
+            { id: '1900000000', title: 'מאמרי אדמו"ר האמצעי', en: "Maamarim HaEmtza'i" },
+        ]
+    },
+    {
+        id: '700000000', title: 'ספרי כ"ק אדמו"ר ה"צמח צדק"', en: 'Tzemach Tzedek',
+        books: [
+            { id: '1800000000', title: 'אור התורה', en: 'Or HaTorah' },
+            { id: '2900630000', title: 'דרך מצותיך', en: 'Derech Mitzvosecha' },
+            { id: '3000730000', title: 'ספר החקירה', en: 'Sefer HaChakirah' },
+            { id: '3301300000', title: 'יהל אור על תהלים', en: 'Yahal Or al Tehillim' },
+            { id: '3801360000', title: 'שו"ת', en: 'Responsa' },
+            { id: '4101400000', title: 'מאמרי צ"צ', en: 'Maamarim Tzemach Tzedek' },
+        ]
+    },
+    {
+        id: '800000000', title: 'ספרי כ"ק אדמו"ר מהר"ש נ"ע', en: 'Maharash',
+        books: [
+            { id: '2000000000', title: 'תורת שמואל', en: 'Torat Shmuel' },
+        ]
+    },
+    {
+        id: '900000000', title: 'ספרי כ"ק אדמו"ר מוהרש"ב נ"ע', en: 'Rashab',
+        books: [
+            { id: '3601330000', title: 'המשך תער"ב', en: "Hemshech Ta'arech" },
+            { id: '4401900000', title: 'קונטרס ומעין', en: 'Kuntres UMaayan' },
+            { id: '7101000000', title: 'שו"ת תורת שלום', en: 'Torat Shalom Responsa' },
+        ]
+    },
+    {
+        id: '1000000000', title: 'ספרי כ"ק אדמו"ר מוהריי"צ נ"ע', en: 'Rayatz',
+        books: [
+            { id: '2700520000', title: 'ספר המאמרים', en: 'Sefer HaMaamarim' },
+            { id: '5802080000', title: 'זכרונותי', en: 'Zichronosai (Memoirs)' },
+            { id: '5102020000', title: 'תולדות אברהם חיים', en: 'Toldot Avraham Chaim' },
+        ]
+    },
+    {
+        id: '1100000000', title: 'ספרי כ"ק אדמו"ר', en: 'The Rebbe (Menachem Mendel)',
+        books: [
+            { id: '1200000000', title: 'אגרות קודש', en: 'Igros Kodesh' },
+            { id: '1400000000', title: 'תורת מנחם', en: 'Torat Menachem' },
+            { id: '1301000000', title: 'לקוטי שיחות', en: 'Likkutei Sichos' },
+            { id: '1500000000', title: 'מאמרים מלוקטים', en: 'Maamarim Meluktim' },
+            { id: '5002000000', title: 'רשימות', en: 'Reshimos' },
+            { id: '3701350000', title: 'היום יום', en: 'Hayom Yom' },
+            { id: '4501930000', title: 'ענינה של תורת החסידות', en: 'Inyana shel Torat HaChassidus' },
+        ]
+    },
+    {
+        id: '4600000000', title: 'אוצר החסידים', en: 'Otzar HaChassidim',
+        books: [
+            { id: '8002600000', title: 'ביאורי תניא', en: 'Biurei Tanya' },
+            { id: '8102960000', title: 'משולחן הארי', en: 'Mishulchan HaAri' },
+            { id: '4801940000', title: 'פלח הרמון', en: 'Pelech HaRimon' },
+            { id: '4900000000', title: 'שארית יהודה', en: "She'erit Yehudah" },
+            { id: '5402050000', title: 'אוצר מנהגי חב"ד', en: 'Otzar Minhagei Chabad' },
+            { id: '7302370000', title: 'שיעורי הלכה למעשה', en: 'Shiurei Halacha LeMaaseh' },
+        ]
+    },
+    {
+        id: '4700000000', title: 'מסביב לחסידות', en: 'Around Chassidus (History)',
+        books: [
+            { id: '1120000000', title: 'מסביב לחסידות', en: 'Msaviv LaChassidus' },
+            { id: '5202030000', title: 'תולדות חב"ד בארץ הקודש', en: 'Chabad History in Israel' },
+            { id: '6802240000', title: 'תולדות חב"ד ברוסיה', en: 'Chabad History in Russia' },
+            { id: '7002280000', title: 'תולדות חב"ד בפולין, ליטא ולטביא', en: 'Chabad History in Poland, Lithuania, Latvia' },
+        ]
+    }
+];
+
+// Navigation history stack
+let history = [];
+let currentId = null;
+
+function buildNav() {
+    const tree = document.getElementById('navTree');
+    tree.innerHTML = '';
+    CATEGORIES.forEach(cat => {
+        const catDiv = document.createElement('div');
+        catDiv.className = 'cat-item';
+        catDiv.innerHTML = `
+            <div class="cat-header" onclick="toggleCat(this)">
+                <span>
+                    <div class="cat-title">${cat.title}</div>
+                    <div class="cat-en">${cat.en}</div>
+                </span>
+                <span class="arrow">▶</span>
+            </div>
+            <div class="cat-books">
+                ${cat.books.map(b => `
+                    <div class="book-item" id="book-${b.id}" onclick="loadPage('${b.id}', '${escHtml(b.title)}')">
+                        ${b.title}
+                        <div class="book-en">${b.en}</div>
+                    </div>`).join('')}
+            </div>`;
+        tree.appendChild(catDiv);
+    });
+}
+
+function escHtml(s) { return s.replace(/'/g, "\\'"); }
+
+function toggleCat(el) {
+    el.parentElement.classList.toggle('open');
+}
+
+function showWelcome() {
+    history = [];
+    currentId = null;
+    document.getElementById('breadcrumb').innerHTML = '<a onclick="showWelcome()">ראשי</a>';
+    document.getElementById('pageContent').innerHTML = `
+        <div class="welcome">
+            <h2>ספריית חב"ד ליובאוויטש</h2>
+            <p>בחר ספר מהתפריט משמאל כדי לצפות בתוכן</p>
+            <p style="font-size:0.85rem; direction:ltr; color:#aaa;">Select a book from the sidebar to view content</p>
+            <div class="stats-big">
+                <div class="stat-block"><div class="num">66,816</div><div class="lbl">pages scraped</div></div>
+                <div class="stat-block"><div class="num">353</div><div class="lbl">books & volumes</div></div>
+                <div class="stat-block"><div class="num">9</div><div class="lbl">Rebbes</div></div>
+            </div>
+        </div>`;
+    document.querySelectorAll('.book-item').forEach(b => b.classList.remove('active'));
+}
+
+async function loadPage(id, titleHint) {
+    currentId = id;
+    document.getElementById('pageContent').innerHTML = '<div class="loading">טוען... Loading...</div>';
+
+    try {
+        const resp = await fetch(`pages/${id}.md`);
+        if (!resp.ok) throw new Error(`Not found: ${id}`);
+        const text = await resp.text();
+        renderPage(id, text, titleHint);
+    } catch (e) {
+        document.getElementById('pageContent').innerHTML = `
+            <div class="page-content">
+                <p style="color:#888">דף לא נמצא (${id})</p>
+                <p style="font-size:0.8rem; direction:ltr; color:#aaa">Page not found. It may not have been scraped.</p>
+                <p style="margin-top:1rem"><a href="https://chabadlibrary.org/books/${id}" target="_blank" style="color:#8B4513">View on chabadlibrary.org →</a></p>
+            </div>`;
+    }
+}
+
+function parseMarkdown(text) {
+    // Extract breadcrumb line
+    const lines = text.split('\n');
+    let breadcrumb = '';
+    let bodyLines = [];
+    let haoros = '';
+    let inHaoros = false;
+    let children = [];
+
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (i === 0 && line.startsWith('# ')) {
+            breadcrumb = line.slice(2).trim();
+            continue;
+        }
+        if (line === '--- HAOROS ---') { inHaoros = true; continue; }
+
+        // Parse child links: "- title [id]" or "  - title [id]"
+        const childMatch = line.match(/^-{1,2}\s+(.+?)\s+\[(\d{9,})\]$/);
+        if (childMatch) {
+            children.push({ title: childMatch[1].trim(), id: childMatch[2] });
+            continue;
+        }
+
+        if (inHaoros) haoros += line + '\n';
+        else bodyLines.push(line);
+    }
+
+    // Clean old Jina format
+    let body = bodyLines.join('\n');
+    body = body.replace(/^Title:.*$/gm, '').replace(/^URL Source:.*$/gm, '')
+               .replace(/^Published Time:.*$/gm, '').replace(/^Markdown Content:$/gm, '')
+               .replace(/\[([^\]]+)\]\(https?:\/\/[^)]+\)/g, '$1')
+               .replace(/^\#{1,6}\s+/gm, '').replace(/\*{1,3}([^*\n]+)\*{1,3}/g, '$1')
+               .replace(/\n{4,}/g, '\n\n\n').trim();
+
+    return { breadcrumb, children, body, haoros };
+}
+
+function renderPage(id, rawText, titleHint) {
+    const { breadcrumb, children, body, haoros } = parseMarkdown(rawText);
+
+    // Update breadcrumb bar
+    const parts = breadcrumb ? breadcrumb.split('>').map(p => p.trim()) : [titleHint || id];
+    const bcHtml = '<a onclick="showWelcome()">ראשי</a> ‹ ' +
+        parts.map((p, i) => {
+            if (i === parts.length - 1) return `<strong>${p}</strong>`;
+            return `<span>${p}</span>`;
+        }).join(' ‹ ');
+    document.getElementById('breadcrumb').innerHTML = bcHtml;
+
+    const title = parts[parts.length - 1] || titleHint || id;
+
+    let html = `<div class="page-content">`;
+
+    // Back button if navigated deep
+    if (history.length > 0) {
+        const prev = history[history.length - 1];
+        html += `<button class="back-btn" onclick="goBack()">← חזרה</button>`;
+    }
+
+    html += `<div class="page-title">${title}</div>`;
+
+    // Children grid
+    if (children.length > 0) {
+        html += `<div class="children-grid">`;
+        children.forEach(c => {
+            html += `<div class="child-card" onclick="navigate('${c.id}', '${escHtml(c.title)}')">
+                <div class="child-title">${c.title}</div>
+                <div class="child-id">${c.id}</div>
+            </div>`;
+        });
+        html += `</div>`;
+    }
+
+    // Body text
+    if (body) {
+        html += `<div class="text-body">${escapeHtml(body)}</div>`;
+    }
+
+    if (haoros) {
+        html += `<div class="haoros-section"><h3>הערות</h3><div class="text-body">${escapeHtml(haoros)}</div></div>`;
+    }
+
+    // External link
+    html += `<p style="margin-top:2rem; font-size:0.8rem; direction:ltr; color:#aaa">
+        <a href="https://chabadlibrary.org/books/${id}" target="_blank" style="color:#8B4513">View on chabadlibrary.org →</a>
+        &nbsp;|&nbsp; ID: ${id}
+    </p>`;
+
+    html += `</div>`;
+    document.getElementById('pageContent').innerHTML = html;
+    document.getElementById('pageContent').scrollTop = 0;
+}
+
+function navigate(id, title) {
+    if (currentId) history.push(currentId);
+    loadPage(id, title);
+}
+
+function goBack() {
+    if (history.length === 0) { showWelcome(); return; }
+    const prev = history.pop();
+    currentId = prev;
+    loadPage(prev, '');
+}
+
+function escapeHtml(text) {
+    return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function onSearch(query) {
+    // Simple: highlight matching book items in sidebar
+    query = query.trim();
+    document.querySelectorAll('.book-item').forEach(el => {
+        el.style.display = (!query || el.textContent.includes(query)) ? '' : 'none';
+    });
+    if (query) {
+        document.querySelectorAll('.cat-item').forEach(cat => cat.classList.add('open'));
+    }
+}
+
+buildNav();
+</script>
+</body>
+</html>
