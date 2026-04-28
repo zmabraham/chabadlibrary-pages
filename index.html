@@ -151,6 +151,29 @@
         }
         .child-card .child-title { font-size: 1rem; color: #2C1810; }
         .child-card .child-id { font-size: 0.65rem; color: #aaa; direction: ltr; margin-top: 0.2rem; }
+        .page-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 2.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid #d8cfc0;
+            gap: 1rem;
+        }
+        .page-nav-btn {
+            padding: 0.5rem 1.2rem;
+            background: #8B4513;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-family: inherit;
+            transition: background 0.15s;
+        }
+        .page-nav-btn:hover { background: #6B3410; }
+        .page-nav-btn:disabled { background: #ccc; cursor: default; }
+        .page-nav-pos { font-size: 0.8rem; color: #8a7a6a; }
         .text-body {
             font-size: 1.05rem;
             line-height: 1.9;
@@ -381,6 +404,9 @@ window.addEventListener('popstate', () => {
 // Navigation history stack
 let navHistory = [];
 let currentId = null;
+let currentSiblings = [];  // [{id, title}] — siblings of current page
+// Sibling groups stored by parent render, keyed by first child id
+const siblingGroups = {};
 
 function buildNav() {
     const tree = document.getElementById('navTree');
@@ -416,6 +442,7 @@ function toggleCat(el) {
 function showWelcome(updateUrl = true) {
     navHistory = [];
     currentId = null;
+    currentSiblings = [];
     if (updateUrl) setHashId(null);
     document.getElementById('breadcrumb').innerHTML = '<a onclick="showWelcome()">ראשי</a>';
     document.getElementById('pageContent').innerHTML = `
@@ -514,11 +541,13 @@ function renderPage(id, rawText, titleHint) {
 
     html += `<div class="page-title">${title}</div>`;
 
-    // Children grid
+    // Children grid — store sibling group for prev/next use
     if (children.length > 0) {
+        const groupKey = children[0].id;
+        siblingGroups[groupKey] = children;
         html += `<div class="children-grid">`;
-        children.forEach(c => {
-            html += `<div class="child-card" onclick="navigate('${c.id}', '${escHtml(c.title)}')">
+        children.forEach((c, i) => {
+            html += `<div class="child-card" onclick="navigateWithSiblings('${c.id}', '${escHtml(c.title)}', '${groupKey}', ${i})">
                 <div class="child-title">${c.title}</div>
                 <div class="child-id">${c.id}</div>
             </div>`;
@@ -535,8 +564,32 @@ function renderPage(id, rawText, titleHint) {
         html += `<div class="haoros-section"><h3>הערות</h3><div class="text-body">${escapeHtml(haoros)}</div></div>`;
     }
 
+    // Prev / Next navigation
+    if (currentSiblings.length > 1) {
+        const siblings = currentSiblings;
+        const groupKey = siblings[0].id;
+        const pos = siblings.findIndex(s => s.id === id);
+        if (pos !== -1) {
+            const prev = pos > 0 ? siblings[pos - 1] : null;
+            const next = pos < siblings.length - 1 ? siblings[pos + 1] : null;
+            html += `<div class="page-nav">`;
+            if (prev) {
+                html += `<button class="page-nav-btn" onclick="navigateWithSiblings('${prev.id}', '${escHtml(prev.title)}', '${groupKey}', ${pos-1})">→ ${escapeHtml(prev.title)}</button>`;
+            } else {
+                html += `<button class="page-nav-btn" disabled>→ ראשון</button>`;
+            }
+            html += `<span class="page-nav-pos">${pos + 1} / ${siblings.length}</span>`;
+            if (next) {
+                html += `<button class="page-nav-btn" onclick="navigateWithSiblings('${next.id}', '${escHtml(next.title)}', '${groupKey}', ${pos+1})">← ${escapeHtml(next.title)}</button>`;
+            } else {
+                html += `<button class="page-nav-btn" disabled>← אחרון</button>`;
+            }
+            html += `</div>`;
+        }
+    }
+
     // External link
-    html += `<p style="margin-top:2rem; font-size:0.8rem; direction:ltr; color:#aaa">
+    html += `<p style="margin-top:1.5rem; font-size:0.8rem; direction:ltr; color:#aaa">
         <a href="https://chabadlibrary.org/books/${id}" target="_blank" style="color:#8B4513">View on chabadlibrary.org →</a>
         &nbsp;|&nbsp; ID: ${id}
     </p>`;
@@ -548,6 +601,13 @@ function renderPage(id, rawText, titleHint) {
 
 function navigate(id, title) {
     if (currentId) navHistory.push(currentId);
+    currentSiblings = [];
+    loadPage(id, title);
+}
+
+function navigateWithSiblings(id, title, groupKey, posIndex) {
+    if (currentId) navHistory.push(currentId);
+    currentSiblings = siblingGroups[groupKey] || [];
     loadPage(id, title);
 }
 
@@ -555,6 +615,7 @@ function goBack() {
     if (navHistory.length === 0) { showWelcome(); return; }
     const prev = navHistory.pop();
     currentId = prev;
+    currentSiblings = [];
     loadPage(prev, '');
 }
 
