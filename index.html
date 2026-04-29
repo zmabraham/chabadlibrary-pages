@@ -181,6 +181,25 @@
             margin-top: 1.5rem;
             white-space: pre-wrap;
         }
+        /* Inline formatting classes */
+        .ftnref a { color: #8B4513; text-decoration: none; font-size: 0.75em; }
+        .ftn-anchor { display: inline; }
+        .fmt-small { font-size: 0.85em; }
+        .fmt-small-italic { font-size: 0.85em; font-style: italic; }
+        .fmt-dibur { font-weight: bold; font-style: italic; }
+        .fmt-hagoho { font-size: 0.88em; color: #555; }
+        .fmt-kitzur { font-size: 0.9em; font-style: italic; border-right: 3px solid #c0a060; padding-right: 0.5em; }
+        .fmt-nusach { font-style: italic; }
+        .fmt-cup { border: 1px solid #b08850; padding: 0.15em 0.4em; border-radius: 3px; }
+        .fmt-quotation { font-style: italic; }
+        .fmt-reshimo { background: #fdf5e6; padding: 0.1em 0.3em; border-radius: 2px; }
+        .fmt-mazkir { color: #7a5c3a; font-size: 0.9em; }
+        .fmt-pianuach { font-style: italic; color: #5a5a5a; }
+        .fmt-heading { font-weight: bold; text-decoration: underline; }
+        .fmt-zman { font-style: italic; color: #666; }
+        .fmt-comments { font-size: 0.9em; color: #555; }
+        .fmt-converted-fn { font-size: 0.88em; }
+
         .haoros-section {
             margin-top: 2rem;
             padding: 1rem 1.5rem;
@@ -583,11 +602,11 @@ function renderPage(id, rawText, titleHint) {
 
     // Body text
     if (body) {
-        html += `<div class="text-body">${escapeHtml(body)}</div>`;
+        html += `<div class="text-body">${formatText(body)}</div>`;
     }
 
     if (haoros) {
-        html += `<div class="haoros-section"><h3>הערות</h3><div class="text-body">${escapeHtml(haoros)}</div></div>`;
+        html += `<div class="haoros-section"><h3>הערות</h3><div class="text-body">${formatText(haoros)}</div></div>`;
     }
 
     // Prev / Next navigation
@@ -623,6 +642,63 @@ function renderPage(id, rawText, titleHint) {
     html += `</div>`;
     document.getElementById('pageContent').innerHTML = html;
     document.getElementById('pageContent').scrollTop = 0;
+}
+
+function scrollToId(id) {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function formatText(text) {
+    // Escape HTML entities first so raw text is safe
+    let s = escapeHtml(text);
+
+    // Footnote references: [ftnref_N_letter] → superscript
+    s = s.replace(/\[ftnref_([a-zA-Z0-9\u05d0-\u05ea]+(?:_[a-zA-Z0-9\u05d0-\u05ea]+)*)\]/g, (_, ref) => {
+        const parts = ref.split('_');
+        const label = parts.slice(1).join('');
+        return `<sup class="ftnref"><a href="#ftn_${ref}" onclick="scrollToId('ftn_${ref}');return false">${label || parts[0]}</a></sup>`;
+    });
+    // Endnote refs: [ednref_N_M]
+    s = s.replace(/\[ednref_([a-zA-Z0-9_]+)\]/g, (_, ref) => {
+        const num = ref.split('_')[0];
+        return `<sup class="ftnref"><a href="#edn_${ref}" onclick="scrollToId('edn_${ref}');return false">${num}</a></sup>`;
+    });
+    // Footnote anchors in haoros: [ftn_N_letter]
+    s = s.replace(/\[ftn_([a-zA-Z0-9\u05d0-\u05ea]+(?:_[a-zA-Z0-9\u05d0-\u05ea]+)*)\]/g, (_, ref) => `<span id="ftn_${ref}" class="ftn-anchor"></span>`);
+    // Endnote anchors: [edn_N_M]
+    s = s.replace(/\[edn_([a-zA-Z0-9_]+)\]/g, (_, ref) => `<span id="edn_${ref}"></span>`);
+
+    // Inline/span formatting
+    s = s.replace(/\[small_begin\]/g, '<span class="fmt-small">').replace(/\[small_end\]/g, '</span>');
+    s = s.replace(/\[smallitalic_begin\]/g, '<span class="fmt-small-italic">').replace(/\[smallitalic_end\]/g, '</span>');
+    s = s.replace(/\[mudgash\]/g, '<strong>').replace(/\[\/mudgash\]/g, '</strong>');
+    s = s.replace(/\[dibur_maschil\]/g, '<span class="fmt-dibur">').replace(/\[\/dibur_maschil\]/g, '</span>');
+    s = s.replace(/\[hagoho\]/g, '<span class="fmt-hagoho">').replace(/\[\/hagoho\]/g, '</span>');
+    s = s.replace(/\[kitzur_begin\]/g, '<span class="fmt-kitzur">').replace(/\[kitzur_end\]/g, '</span>');
+    s = s.replace(/\[kitzur\]/g, '<span class="fmt-kitzur">').replace(/\[\/kitzur\]/g, '</span>');
+    s = s.replace(/\[nusach\]/g, '<span class="fmt-nusach">').replace(/\[\/nusach\]/g, '</span>');
+    s = s.replace(/\[cup\]/g, '<span class="fmt-cup">').replace(/\[\/cup\]/g, '</span>');
+    s = s.replace(/\[quotation\]/g, '<span class="fmt-quotation">').replace(/\[\/quotation\]/g, '</span>');
+    s = s.replace(/\[reshimo_inline\]/g, '<span class="fmt-reshimo">').replace(/\[\/reshimo_inline\]/g, '</span>');
+    s = s.replace(/\[reshimo\]/g, '<span class="fmt-reshimo">').replace(/\[\/reshimo\]/g, '</span>');
+    s = s.replace(/\[mazkir1\]/g, '<span class="fmt-mazkir">').replace(/\[\/mazkir1\]/g, '</span>');
+    s = s.replace(/\[pianuach\]/g, '<span class="fmt-pianuach">').replace(/\[\/pianuach\]/g, '</span>');
+    s = s.replace(/\[headingintext_begin\]/g, '<strong class="fmt-heading">').replace(/\[headingintext_end\]/g, '</strong>');
+    s = s.replace(/\[zman_begin\]/g, '<span class="fmt-zman">').replace(/\[zman_end\]/g, '</span>');
+    s = s.replace(/\[tochen_begin\]/g, '').replace(/\[tochen_end\]/g, '');
+    s = s.replace(/\[comments_begin\]/g, '<span class="fmt-comments">').replace(/\[comments_end\]/g, '</span>');
+    s = s.replace(/\[converted_footnotes\]/g, '<span class="fmt-converted-fn">').replace(/\[\/converted_footnotes\]/g, '</span>');
+
+    // Section breaks
+    s = s.replace(/\[new_section\]/g, '\n\u2015\u2015\u2015\u2015\u2015\u2015\n');
+    s = s.replace(/\[section_break\]/g, '\n\u2015\u2015\u2015\u2015\u2015\u2015\n');
+
+    // Remove noise tags
+    s = s.replace(/\[(file_begin|file_end|abbi|neersohn|text_end)\]/g, '');
+    s = s.replace(/\[oldpage[^\]]*\]/g, '');
+
+    return s;
 }
 
 function navigate(id, title) {
