@@ -296,11 +296,13 @@ const CATEGORIES = [
             { id: '3200000000', title: 'שו"ת', en: 'Responsa' },
             { id: '5600000000', title: 'פסקי הסידור', en: 'Piskei HaSiddur' },
             { id: '8300000000', title: 'שוע"ר עם ביאור דברי שלום', en: 'Shulchan Aruch with Commentary' },
+            { id: '6500000000', title: 'אגרות קודש', en: 'Igros Kodesh' },
         ]
     },
     {
         id: '600000000', title: 'ספרי כ"ק אדמו"ר האמצעי', en: 'Mitteler Rebbe',
         books: [
+            { id: '6600000000', title: 'אגרות קודש', en: 'Igros Kodesh' },
             { id: '1700000000', title: 'אמרי בינה', en: 'Emrei Binah' },
             { id: '2800000000', title: 'נר מצוה ותורה אור', en: 'Ner Mitzvah VeTorah Or' },
             { id: '2400000000', title: 'פירוש המילות', en: 'Pirush HaMilot' },
@@ -313,6 +315,7 @@ const CATEGORIES = [
     {
         id: '700000000', title: 'ספרי כ"ק אדמו"ר ה"צמח צדק"', en: 'Tzemach Tzedek',
         books: [
+            { id: '6700000000', title: 'אגרות קודש', en: 'Igros Kodesh' },
             { id: '1800000000', title: 'אור התורה', en: 'Or HaTorah' },
             { id: '2900000000', title: 'דרך מצותיך', en: 'Derech Mitzvosecha' },
             { id: '3000000000', title: 'ספר החקירה', en: 'Sefer HaChakirah' },
@@ -330,6 +333,7 @@ const CATEGORIES = [
     {
         id: '900000000', title: 'ספרי כ"ק אדמו"ר מוהרש"ב נ"ע', en: 'Rashab',
         books: [
+            { id: '7200000000', title: 'אגרות קודש', en: 'Igros Kodesh' },
             { id: '3600000000', title: 'המשך תער"ב', en: "Hemshech Ta'arech" },
             { id: '4400000000', title: 'קונטרס ומעין', en: 'Kuntres UMaayan' },
             { id: '7100000000', title: 'שו"ת תורת שלום', en: 'Torat Shalom Responsa' },
@@ -338,9 +342,10 @@ const CATEGORIES = [
     {
         id: '1000000000', title: 'ספרי כ"ק אדמו"ר מוהריי"צ נ"ע', en: 'Rayatz',
         books: [
+            { id: '3500000000', title: 'אגרות קודש', en: 'Igros Kodesh' },
             { id: '2700000000', title: 'ספר המאמרים', en: 'Sefer HaMaamarim' },
-            { id: '5800000000', title: 'זכרונותי', en: 'Zichronosai (Memoirs)' },
-            { id: '5100000000', title: 'תולדות אברהם חיים', en: 'Toldot Avraham Chaim' },
+            { id: '4300000000', title: 'ספר השיחות', en: 'Sefer HaSichos' },
+            { id: '5700000000', title: 'אדמו"ר ה"צמח צדק" ותנועת ה"השכלה"', en: 'Tzemach Tzedek and the Haskalah Movement' },
         ]
     },
     {
@@ -434,7 +439,7 @@ function buildNav() {
     });
 }
 
-function escHtml(s) { return s.replace(/'/g, "\\'"); }
+function escHtml(s) { return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/'/g, "\\'"); }
 
 function toggleCat(el) {
     el.parentElement.classList.toggle('open');
@@ -549,7 +554,7 @@ function renderPage(id, rawText, titleHint) {
         html += `<div class="children-grid">`;
         children.forEach((c, i) => {
             html += `<div class="child-card" onclick="navigateWithSiblings('${c.id}', '${escHtml(c.title)}', '${groupKey}', ${i})">
-                <div class="child-title">${c.title}</div>
+                <div class="child-title">${c.title.replace(/<[^>]+>/g, '')}</div>
                 <div class="child-id">${c.id}</div>
             </div>`;
         });
