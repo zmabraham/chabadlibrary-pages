@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chabad Library Wiki</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Georgia', serif;
+            background: #F5F1E8;
+            color: #1a1a1a;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            min-height: 100vh;
+        }
+        .sidebar {
+            background: #E8E4DA;
+            border-right: 1px solid #d0c8bc;
+            overflow-y: auto;
+            max-height: 100vh;
+        }
+        .main {
+            padding: 2rem;
+            overflow-y: auto;
+            max-height: 100vh;
+        }
+        .header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #d0c8bc;
+            background: #8B2635;
+            color: white;
+        }
+        .header h1 {
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+        }
+        .stats {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+        .category {
+            margin-bottom: 0.5rem;
+        }
+        .category-title {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+        }
+        .category-title:hover {
+            background: rgba(139, 38, 53, 0.1);
+        }
+        .category-title::after {
+            content: '▶';
+            font-size: 0.7rem;
+            transition: transform 0.2s;
+        }
+        .category.open .category-title::after {
+            transform: rotate(90deg);
+        }
+        .books {
+            display: none;
+            padding-left: 1rem;
+        }
+        .category.open .books {
+            display: block;
+        }
+        .book {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+            border-left: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .book:hover {
+            background: rgba(139, 38, 53, 0.05);
+            border-left-color: #8B2635;
+        }
+        .book.selected {
+            background: rgba(139, 38, 53, 0.15);
+            border-left-color: #8B2635;
+        }
+        .book-title {
+            font-weight: 500;
+        }
+        .book-meta {
+            font-size: 0.75rem;
+            color: #666;
+            margin-top: 0.25rem;
+        }
+        .content h2 {
+            color: #8B2635;
+            margin-bottom: 1rem;
+        }
+        .content p {
+            margin-bottom: 1rem;
+        }
+        .hebrew {
+            font-size: 1.2rem;
+            direction: rtl;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #8a8a8a;
+        }
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            .sidebar {
+                max-height: 40vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="header">
+                <h1>📚 Chabad Library Wiki</h1>
+                <div class="stats" id="stats">Loading...</div>
+            </div>
+            <div id="tree"></div>
+        </aside>
+        <main class="main">
+            <div class="content" id="content">
+                <div class="empty-state">
+                    <h2>Welcome to the Chabad Library Wiki</h2>
+                    <p>Select a book from the sidebar to view its contents.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const hierarchy = [
+            {
+                id: '100000000',
+                title: 'ספרי הבעל שם טוב',
+                titleEn: 'Baal Shem Tov',
+                books: [
+                    { id: '300000000', title: 'כתר שם טוב', titleEn: 'Keter Shem Tov', pages: 0 }
+                ]
+            },
+            {
+                id: '200000000',
+                title: 'ספרי הרב המגיד ממעזריטש',
+                titleEn: 'Maggid of Mezritch',
+                books: [
+                    { id: '400000000', title: 'אור תורה', titleEn: 'Or HaTorah', pages: 0 }
+                ]
+            },
+            {
+                id: '500000000',
+                title: 'ספרי כ"ק אדמו"ר הזקן',
+                titleEn: 'Alter Rebbe',
+                books: [
+                    { id: '3400000000', title: 'תניא', titleEn: 'Tanya', pages: 0 },
+                    { id: '3900000000', title: 'תורה אור', titleEn: 'Torah Or', pages: 0 },
+                    { id: '4000000000', title: 'ליקוטי תורה', titleEn: 'Likutei Torah', pages: 0 },
+                    { id: '2100000000', title: 'מאמרי אדה"ז', titleEn: 'Maamarim Ad HaZ', pages: 0 },
+                    { id: '3100000000', title: 'שולחן ערוך', titleEn: 'Shulchan Aruch', pages: 0 },
+                    { id: '3200000000', title: 'שו"ת', titleEn: 'Responsa', pages: 0 },
+                    { id: '5600000000', title: 'פסקי הסידור', titleEn: 'Piskei HaSiddur', pages: 0 },
+                    { id: '6500000000', title: 'אגרות קודש', titleEn: 'Igrot Kodesh', pages: 0 },
+                    { id: '8300000000', title: 'שוע"ר עם ביאור דברי שלום', titleEn: 'Sho'er U\'Maaviur', pages: 0 }
+                ]
+            },
+            {
+                id: '600000000',
+                title: 'ספרי כ"ק אדמו"ר האמצעי',
+                titleEn: 'Mitteler Rebbe',
+                books: [
+                    { id: '1700000000', title: 'אמרי בינה', titleEn: 'Emrei Binah', pages: 0 },
+                    { id: '2800000000', title: 'נר מצוה ותורה אור', titleEn: 'Ner Mitzvah VeTorah Or', pages: 0 },
+                    { id: '2400000000', title: 'פירוש המילות', titleEn: 'Pirush HaMilot', pages: 0 },
+                    { id: '2200000000', title: 'שערי אורה', titleEn: 'Sha\'arei Orah', pages: 0 },
+                    { id: '2500000000', title: 'שערי תשובה', titleEn: 'Sha\'arei Teshuvah', pages: 0 },
+                    { id: '2300000000', title: 'תורת חיים', titleEn: 'Torat Chaim', pages: 0 },
+                    { id: '1900000000', title: 'מאמרי אדמו"ר האמצעי', titleEn: 'Maamarim HaEmtza\'i', pages: 0 },
+                    { id: '6600000000', title: 'אגרות קודש', titleEn: 'Igrot Kodesh', pages: 0 }
+                ]
+            },
+            {
+                id: '700000000',
+                title: 'ספרי כ"ק אדמו"ר ה"צמח צדק',
+                titleEn: 'Tzemach Tzedek',
+                books: [
+                    { id: '1800000000', title: 'אור התורה', titleEn: 'Or HaTorah', pages: 0 },
+                    { id: '2900000000', title: 'דרך מצותיך', titleEn: 'Derech Mitzvosecha', pages: 0 },
+                    { id: '3000000000', title: 'ספר החקירה', titleEn: 'Sefer HaChakirah', pages: 0 },
+                    { id: '3300000000', title: 'יהל אור על תהלים', titleEn: 'Yahal Or on Psalms', pages: 0 },
+                    { id: '3800000000', title: 'שו"ת', titleEn: 'Responsa', pages: 0 },
+                    { id: '4100000000', title: 'מאמרי אדמו"ר צ"צ', titleEn: 'Maamarim Tzemach Tzedek', pages: 0 },
+                    { id: '6700000000', title: 'אגרות קודש', titleEn: 'Igrot Kodesh', pages: 0 }
+                ]
+            },
+            {
+                id: '800000000',
+                title: 'ספרי כ"ק אדמו"ר מהר"ש נ"ע',
+                titleEn: 'Maharash',
+                books: [
+                    { id: '2000000000', title: 'תורת שמואל', titleEn: 'Torat Shmuel', pages: 0 }
+                ]
+            },
+            {
+                id: '900000000',
+                title: 'ספרי כ"ק אדמו"ר מוהרש"ב נ"ע',
+                titleEn: 'Rashab',
+                books: [
+                    { id: '3600000000', title: 'המשך תער"ב', titleEn: 'Hemshech Tiferes Avraham', pages: 0 },
+                    { id: '4400000000', title: 'קונטרס ומעין', titleEn: 'Kuntres VaMaayan', pages: 0 },
+                    { id: '7100000000', title: 'שו"ת תורת שלום', titleEn: 'Responsa Torat Shalom', pages: 0 },
+                    { id: '7200000000', title: 'אגרות קודש', titleEn: 'Igrot Kodesh', pages: 0 }
+                ]
+            },
+            {
+                id: '1000000000',
+                title: 'ספרי כ"ק אדמו"ר מוהריי"צ נ"ע',
+                titleEn: 'Rayatz',
+                books: [
+                    { id: '3500000000', title: 'אגרות קודש', titleEn: 'Igrot Kodesh', pages: 0 },
+                    { id: '2700000000', title: 'ספר המאמרים', titleEn: 'Sefer HaMaamarim', pages: 0 },
+                    { id: '4300000000', title: 'ספר השיחות', titleEn: 'Sefer HaSichot', pages: 0 },
+                    { id: '5700000000', title: 'אדמו"ר ה"צמח צדק" ותנועת ה"השכלה', titleEn: 'Tzemach Tzedek & Haskalah', pages: 0 }
+                ]
+            },
+            {
+                id: '1100000000',
+                title: 'ספרי כ"ק אדמו"ר',
+                titleEn: 'The Rebbe',
+                books: [
+                    { id: '1200000000', title: 'אגרות קודש', titleEn: 'Igrot Kodesh', pages: 0 },
+                    { id: '1400000000', title: 'תורת מנחם', titleEn: 'Torat Menachem', pages: 0 },
+                    { id: '1300000000', title: 'לקוטי שיחות', titleEn: 'Likutei Sichot', pages: 0 },
+                    { id: '1500000000', title: 'מאמרים מלוקטים', titleEn: 'Maamarim Meluktim', pages: 0 },
+                    { id: '5000000000', title: 'רשימות', titleEn: 'Reshimot', pages: 0 },
+                    { id: '3700000000', title: 'היום יום', titleEn: 'Hayom Yom', pages: 0 },
+                    { id: '4500000000', title: 'ענינה של תורת החסידות', titleEn: 'Essence of Chassidus', pages: 0 },
+                    { id: '6400000000', title: 'לקוטי טעמים ומנהגים להגדה של פסח', titleEn: 'Likutei Taamim for Haggadah', pages: 0 },
+                    { id: '7600000000', title: 'לקוטי טעמים ומנהגים להגדה עם ביאור דברי שלום', titleEn: 'Likutei Taamim with Biur', pages: 0 }
+                ]
+            },
+            {
+                id: '4600000000',
+                title: 'אוצר החסידים',
+                titleEn: 'Otzar HaChassidim',
+                books: [
+                    { id: '8000000000', title: 'ביאורי תניא', titleEn: 'Commentaries on Tanya', pages: 0 },
+                    { id: '8100000000', title: 'משולחן הארי', titleEn: 'Mishulchan HaAri', pages: 0 },
+                    { id: '8200000000', title: 'פסקי אדמו"ר הזקן בהלכות איסור והיתר', titleEn: 'Piskei Alter Rebbe', pages: 0 },
+                    { id: '4800000000', title: 'פלח הרמון', titleEn: 'Pelech HaRimon', pages: 0 },
+                    { id: '4900000000', title: 'שארית יהודה', titleEn: 'She\'erit Yehudah', pages: 0 },
+                    { id: '5400000000', title: 'אוצר מנהגי חב"ד', titleEn: 'Treasury of Chabad Customs', pages: 0 },
+                    { id: '5900000000', title: 'תיקוני מקוואות', titleEn: 'Mikvah Repairs', pages: 0 },
+                    { id: '6000000000', title: 'סדר מכירת חמץ', titleEn: 'Chametz Sale Order', pages: 0 },
+                    { id: '6100000000', title: 'הלכות אמירה לנכרי', titleEn: 'Laws of Speaking to Non-Jews', pages: 0 },
+                    { id: '7300000000', title: 'שיעורי הלכה למעשה', titleEn: 'Practical Halacha Lessons', pages: 0 },
+                    { id: '7400000000', title: 'סדר תנאים אירוסין ונישואין', titleEn: 'Order of Engagement and Marriage', pages: 0 },
+                    { id: '7700000000', title: 'דובר שלום', titleEn: 'Dover Shalom', pages: 0 }
+                ]
+            },
+            {
+                id: '4700000000',
+                title: 'מסביב לחסידות',
+                titleEn: 'Around Hasidism',
+                books: []
+            }
+        ];
+
+        let totalBooks = 0;
+        let scrapedPages = 2812;
+
+        function init() {
+            renderTree();
+            updateStats();
+        }
+
+        function renderTree() {
+            const tree = document.getElementById('tree');
+
+            hierarchy.forEach(category => {
+                const catDiv = document.createElement('div');
+                catDiv.className = 'category';
+
+                const titleDiv = document.createElement('div');
+                titleDiv.className = 'category-title';
+                titleDiv.innerHTML = `<span>${category.title}</span><small>${category.titleEn}</small>`;
+                titleDiv.onclick = () => {
+                    catDiv.classList.toggle('open');
+                };
+
+                const booksDiv = document.createElement('div');
+                booksDiv.className = 'books';
+
+                if (category.books.length === 0) {
+                    const empty = document.createElement('div');
+                    empty.className = 'book';
+                    empty.style.color = '#999';
+                    empty.textContent = 'No sub-books';
+                    booksDiv.appendChild(empty);
+                } else {
+                    category.books.forEach(book => {
+                        totalBooks++;
+                        const bookDiv = document.createElement('div');
+                        bookDiv.className = 'book';
+                        bookDiv.innerHTML = `
+                            <div class="book-title">${book.title}</div>
+                            <div class="book-meta">${book.titleEn}</div>
+                        `;
+                        bookDiv.onclick = (e) => {
+                            e.stopPropagation();
+                            document.querySelectorAll('.book').forEach(b => b.classList.remove('selected'));
+                            bookDiv.classList.add('selected');
+                            showBook(book, category);
+                        };
+                        booksDiv.appendChild(bookDiv);
+                    });
+                }
+
+                catDiv.appendChild(titleDiv);
+                catDiv.appendChild(booksDiv);
+                tree.appendChild(catDiv);
+            });
+        }
+
+        function showBook(book, category) {
+            const content = document.getElementById('content');
+            content.innerHTML = `
+                <h2 class="hebrew">${book.title}</h2>
+                <p><strong>${book.titleEn}</strong></p>
+                <p>Category: ${category.title} (${category.titleEn})</p>
+                <p>Book ID: ${book.id}</p>
+                <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid #d0c8bc;">
+                <p><a href="https://chabadlibrary.org/books/${book.id}" target="_blank" style="color: #8B2635;">View on Chabad Library →</a></p>
+                <p style="margin-top: 2rem; color: #8a8a8a;">Content will be available once scraping completes.</p>
+            `;
+        }
+
+        function updateStats() {
+            const stats = document.getElementById('stats');
+            stats.textContent = `${totalBooks} books • ${scrapedPages} pages scraped • 11 categories`;
+        }
+
+        init();
+    </script>
+</body>
+</html>
